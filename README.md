@@ -74,8 +74,8 @@ comunidade-sustentavel/
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/comunidade-sustentavel.git
-cd comunidade-sustentavel
+git clone https://github.com/kauecalixto/comunidadeAPi.git
+cd comunidadeAPi
 ```
 
 2. Instale as dependências:
