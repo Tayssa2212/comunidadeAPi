@@ -10,7 +10,7 @@ Esta API foi desenvolvida para gerenciar comunidades sustentáveis, permitindo o
 
 - Node.js
 - Express
-- Sequelize (ORM)
+- Sequelize ((ORM))
 - PostgreSQL
 - Jest (Testes)
 - Swagger (Documentação da API)
