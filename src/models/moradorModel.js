@@ -33,7 +33,7 @@ const Morador = sequelize.define('Morador', {
     },
   },
 }, {
-  tableName: 'Moradores',
+  tableName: 'moradores', 
   timestamps: false,
 });
 

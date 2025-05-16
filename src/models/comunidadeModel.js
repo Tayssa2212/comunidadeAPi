@@ -40,8 +40,8 @@ const Comunidade = sequelize.define('Comunidade', {
     defaultValue: DataTypes.NOW,
   },
 }, {
-  tableName: 'Comunidades',
-  timestamps: false, 
+  tableName: 'comunidades', 
+  timestamps: false,
 });
 
 module.exports = Comunidade;

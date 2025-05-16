@@ -1,15 +1,15 @@
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 const Comunidade = require('../ComunidadeModel');
 const Morador = require('../MoradorModel');
 
-// Aqui define a relacao: Uma Comunidade tem muitos Moradores
+// Definido a relação: Uma Comunidade tem muitos Moradores
 Comunidade.hasMany(Morador, { foreignKey: 'idComunidade' });
 Morador.belongsTo(Comunidade, { foreignKey: 'idComunidade' });
 
-// Atencao: Sincronizar os modelos com o banco de dados
-sequelize.sync({ force: true }) // force: true "depois alterar esta parte"
+// Sincroniza os modelos com o banco de dados
+sequelize.sync({ force: true })
   .then(() => {
-    console.log('Modelos sincronizados com o banco de dados.');
+    console.log('Modelos sincronizados com o PostgreSQL.');
   })
   .catch((err) => {
     console.error('Erro ao sincronizar os modelos:', err);
