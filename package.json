@@ -11,7 +11,13 @@
     "docs:dev": "mkdocs serve",
     "docs:build": "mkdocs build"
   },
-  "keywords": ["sustentabilidade", "comunidade", "api", "express", "sequelize"],
+  "keywords": [
+    "sustentabilidade",
+    "comunidade",
+    "api",
+    "express",
+    "sequelize"
+  ],
   "author": "Equipe de Desenvolvimento",
   "license": "ISC",
   "dependencies": {
@@ -32,7 +38,9 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "coveragePathIgnorePatterns": ["/node_modules/"],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ],
     "coverageThreshold": {
       "global": {
         "branches": 50,
