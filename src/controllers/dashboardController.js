@@ -5,6 +5,7 @@
 
 const { Comunidade, Morador, Iniciativa, Metrica, sequelize } = require("../models")
 const logger = require("../utils/logger")
+const { success, error } = require("../utils/responseHandler");
 
 /**
  * Obtém métricas gerais do sistema
@@ -86,13 +87,16 @@ const getMetricas = async (req, res) => {
       iniciativasPorStatus,
       impactoEstimado,
       comunidadesAtivas,
-    })
-  } catch (error) {
-    logger.error(`Erro ao buscar métricas do dashboard: ${error.message}`)
-    res.status(500).json({ error: "Erro ao buscar métricas" })
+    });
+    // ↓ ALTERADO
+    return success(res, payload, "Métricas do dashboard recuperadas com sucesso");
+  } catch (err) {
+    logger.error(`Erro ao buscar métricas do dashboard: ${err.message}`);
+    // ↓ ALTERADO
+    return error(res, "Erro ao buscar métricas do dashboard", 500, err.message);
   }
-}
+};
 
 module.exports = {
   getMetricas,
-}
+};
