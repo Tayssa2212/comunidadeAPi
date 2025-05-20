@@ -5,6 +5,8 @@
 
 const { Morador, Comunidade, Iniciativa } = require("../models")
 const logger = require("../utils/logger")
+const { success, error } = require("../utils/responseHandler"); // <-- ADICIONADO: para padronizar as respostas
+
 
 /**
  * Obtém todos os moradores
@@ -15,13 +17,18 @@ const getAllMoradores = async (req, res) => {
   try {
     const moradores = await Morador.findAll({
       include: [{ model: Comunidade, as: "comunidade" }],
-    })
-    res.status(200).json(moradores)
-  } catch (error) {
-    logger.error(`Erro ao buscar moradores: ${error.message}`)
-    res.status(500).json({ error: "Erro ao buscar moradores" })
+    });
+
+    // ↓ ALTERADO: resposta formatada com função de sucesso
+    return success(res, moradores, "Moradores listados com sucesso");
+
+  } catch (err) {
+    logger.error(`Erro ao buscar moradores: ${err.message}`);
+
+    // ↓ ALTERADO: resposta formatada com função de erro
+    return error(res, "Erro ao buscar moradores", 500, err.message);
   }
-}
+};
 
 /**
  * Obtém um morador pelo ID
@@ -30,25 +37,30 @@ const getAllMoradores = async (req, res) => {
  */
 const getMoradorById = async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
 
     const morador = await Morador.findByPk(id, {
       include: [
         { model: Comunidade, as: "comunidade" },
         { model: Iniciativa, as: "iniciativasResponsavel" },
       ],
-    })
+    });
 
     if (!morador) {
-      return res.status(404).json({ error: "Morador não encontrado" })
+      // ↓ ALTERADO: resposta formatada com função de erro
+      return error(res, "Morador não encontrado", 404);
     }
 
-    res.status(200).json(morador)
-  } catch (error) {
-    logger.error(`Erro ao buscar morador ${req.params.id}: ${error.message}`)
-    res.status(500).json({ error: "Erro ao buscar morador" })
+    // ↓ ALTERADO: resposta formatada com função de sucesso
+    return success(res, morador, "Morador encontrado com sucesso");
+
+  } catch (err) {
+    logger.error(`Erro ao buscar morador ${req.params.id}: ${err.message}`);
+
+    // ↓ ALTERADO: resposta formatada com função de erro
+    return error(res, "Erro ao buscar morador", 500, err.message);
   }
-}
+};
 
 /**
  * Cria um novo morador
@@ -57,17 +69,17 @@ const getMoradorById = async (req, res) => {
  */
 const createMorador = async (req, res) => {
   try {
-    const { nome, email, telefone, dataNascimento, comunidadeId } = req.body
+    const { nome, email, telefone, dataNascimento, comunidadeId } = req.body;
 
-    // Validação básica
     if (!nome || !email || !comunidadeId) {
-      return res.status(400).json({ error: "Nome, email e comunidadeId são obrigatórios" })
+      // ↓ ALTERADO: resposta formatada com função de erro
+      return error(res, "Nome, email e comunidadeId são obrigatórios", 400);
     }
 
-    // Verifica se a comunidade existe
-    const comunidade = await Comunidade.findByPk(comunidadeId)
+    const comunidade = await Comunidade.findByPk(comunidadeId);
     if (!comunidade) {
-      return res.status(404).json({ error: "Comunidade não encontrada" })
+      // ↓ ALTERADO: resposta formatada com função de erro
+      return error(res, "Comunidade não encontrada", 404);
     }
 
     const novoMorador = await Morador.create({
@@ -76,28 +88,28 @@ const createMorador = async (req, res) => {
       telefone,
       dataNascimento,
       comunidadeId,
-    })
+    });
 
-    res.status(201).json(novoMorador)
-  } catch (error) {
-    logger.error(`Erro ao criar morador: ${error.message}`)
+    // ↓ ALTERADO: resposta formatada com função de sucesso
+    return success(res, novoMorador, "Morador criado com sucesso", 201);
 
-    // Verifica se é um erro de validação do Sequelize
-    if (error.name === "SequelizeValidationError") {
-      return res.status(400).json({
-        error: "Erro de validação",
-        details: error.errors.map((e) => e.message),
-      })
+  } catch (err) {
+    logger.error(`Erro ao criar morador: ${err.message}`);
+
+    if (err.name === "SequelizeValidationError") {
+      // ↓ ALTERADO: resposta formatada com função de erro
+      return error(res, "Erro de validação", 400, err.errors.map((e) => e.message));
     }
 
-    // Verifica se é um erro de unicidade (email duplicado)
-    if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(400).json({ error: "Email já cadastrado" })
+    if (err.name === "SequelizeUniqueConstraintError") {
+      // ↓ ALTERADO: resposta formatada com função de erro
+      return error(res, "Email já cadastrado", 400);
     }
 
-    res.status(500).json({ error: "Erro ao criar morador" })
+    // ↓ ALTERADO: resposta formatada com função de erro
+    return error(res, "Erro ao criar morador", 500, err.message);
   }
-}
+};
 
 /**
  * Atualiza um morador existente
@@ -106,52 +118,51 @@ const createMorador = async (req, res) => {
  */
 const updateMorador = async (req, res) => {
   try {
-    const { id } = req.params
-    const { nome, email, telefone, dataNascimento, comunidadeId } = req.body
+    const { id } = req.params;
+    const { nome, email, telefone, dataNascimento, comunidadeId } = req.body;
 
-    const morador = await Morador.findByPk(id)
-
+    const morador = await Morador.findByPk(id);
     if (!morador) {
-      return res.status(404).json({ error: "Morador não encontrado" })
+      // ↓ ALTERADO: resposta formatada com função de erro
+      return error(res, "Morador não encontrado", 404);
     }
 
-    // Se estiver atualizando a comunidade, verifica se ela existe
     if (comunidadeId && comunidadeId !== morador.comunidadeId) {
-      const comunidade = await Comunidade.findByPk(comunidadeId)
+      const comunidade = await Comunidade.findByPk(comunidadeId);
       if (!comunidade) {
-        return res.status(404).json({ error: "Comunidade não encontrada" })
+        // ↓ ALTERADO: resposta formatada com função de erro
+        return error(res, "Comunidade não encontrada", 404);
       }
     }
 
-    // Atualiza os campos
     await morador.update({
       nome: nome || morador.nome,
       email: email || morador.email,
       telefone: telefone !== undefined ? telefone : morador.telefone,
       dataNascimento: dataNascimento || morador.dataNascimento,
       comunidadeId: comunidadeId || morador.comunidadeId,
-    })
+    });
 
-    res.status(200).json(morador)
-  } catch (error) {
-    logger.error(`Erro ao atualizar morador ${req.params.id}: ${error.message}`)
+    // ↓ ALTERADO: resposta formatada com função de sucesso
+    return success(res, morador, "Morador atualizado com sucesso");
 
-    // Verifica se é um erro de validação do Sequelize
-    if (error.name === "SequelizeValidationError") {
-      return res.status(400).json({
-        error: "Erro de validação",
-        details: error.errors.map((e) => e.message),
-      })
+  } catch (err) {
+    logger.error(`Erro ao atualizar morador ${req.params.id}: ${err.message}`);
+
+    if (err.name === "SequelizeValidationError") {
+      // ↓ ALTERADO: resposta formatada com função de erro
+      return error(res, "Erro de validação", 400, err.errors.map((e) => e.message));
     }
 
-    // Verifica se é um erro de unicidade (email duplicado)
-    if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(400).json({ error: "Email já cadastrado" })
+    if (err.name === "SequelizeUniqueConstraintError") {
+      // ↓ ALTERADO: resposta formatada com função de erro
+      return error(res, "Email já cadastrado", 400);
     }
 
-    res.status(500).json({ error: "Erro ao atualizar morador" })
+    // ↓ ALTERADO: resposta formatada com função de erro
+    return error(res, "Erro ao atualizar morador", 500, err.message);
   }
-}
+};
 
 /**
  * Remove um morador
@@ -160,22 +171,26 @@ const updateMorador = async (req, res) => {
  */
 const deleteMorador = async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
 
-    const morador = await Morador.findByPk(id)
-
+    const morador = await Morador.findByPk(id);
     if (!morador) {
-      return res.status(404).json({ error: "Morador não encontrado" })
+      // ↓ ALTERADO: resposta formatada com função de erro
+      return error(res, "Morador não encontrado", 404);
     }
 
-    await morador.destroy()
+    await morador.destroy();
 
-    res.status(200).json({ message: "Morador removido com sucesso" })
-  } catch (error) {
-    logger.error(`Erro ao remover morador ${req.params.id}: ${error.message}`)
-    res.status(500).json({ error: "Erro ao remover morador" })
+    // ↓ ALTERADO: resposta formatada com função de sucesso
+    return success(res, null, "Morador removido com sucesso");
+
+  } catch (err) {
+    logger.error(`Erro ao remover morador ${req.params.id}: ${err.message}`);
+
+    // ↓ ALTERADO: resposta formatada com função de erro
+    return error(res, "Erro ao remover morador", 500, err.message);
   }
-}
+};
 
 module.exports = {
   getAllMoradores,
@@ -183,4 +198,4 @@ module.exports = {
   createMorador,
   updateMorador,
   deleteMorador,
-}
+};
