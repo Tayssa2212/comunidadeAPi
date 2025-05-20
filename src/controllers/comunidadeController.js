@@ -5,6 +5,7 @@
 
 const { Comunidade, Morador, Iniciativa } = require("../models")
 const logger = require("../utils/logger")
+const { success, error } = require("../utils/responseHandler");
 
 /**
  * Obtém todas as comunidades
@@ -13,13 +14,15 @@ const logger = require("../utils/logger")
  */
 const getAllComunidades = async (req, res) => {
   try {
-    const comunidades = await Comunidade.findAll()
-    res.status(200).json(comunidades)
-  } catch (error) {
-    logger.error(`Erro ao buscar comunidades: ${error.message}`)
-    res.status(500).json({ error: "Erro ao buscar comunidades" })
+    const comunidades = await Comunidade.findAll();
+    // ↓ ALTERADO
+    return success(res, comunidades, "Comunidades listadas com sucesso");
+  } catch (err) {
+    logger.error(`Erro ao buscar comunidades: ${err.message}`);
+    // ↓ ALTERADO
+    return error(res, "Erro ao buscar comunidades", 500, err.message);
   }
-}
+};
 
 /**
  * Obtém uma comunidade pelo ID
@@ -38,15 +41,17 @@ const getComunidadeById = async (req, res) => {
     })
 
     if (!comunidade) {
-      return res.status(404).json({ error: "Comunidade não encontrada" })
+      // ↓ ALTERADO
+      return error(res, "Comunidade não encontrada", 404);
     }
 
-    res.status(200).json(comunidade)
-  } catch (error) {
+    return success(res, comunidade, "Comunidade recuperada com sucesso");
+  } catch (err) {
     logger.error(`Erro ao buscar comunidade ${req.params.id}: ${error.message}`)
-    res.status(500).json({ error: "Erro ao buscar comunidade" })
+    // ↓ ALTERADO
+    return error(res, "Erro ao buscar comunidade", 500, err.message);
   }
-}
+};
 
 /**
  * Cria uma nova comunidade
@@ -59,7 +64,7 @@ const createComunidade = async (req, res) => {
 
     // Validação básica
     if (!nome || !localizacao) {
-      return res.status(400).json({ error: "Nome e localização são obrigatórios" })
+      return error(res, "Nome e localização são obrigatórios", 400);
     }
 
     const novaComunidade = await Comunidade.create({
@@ -68,23 +73,22 @@ const createComunidade = async (req, res) => {
       descricao,
       dataFundacao,
       metaSustentabilidade,
-    })
+    });
 
-    res.status(201).json(novaComunidade)
-  } catch (error) {
+    return success(res, novaComunidade, "Comunidade criada com sucesso", 201);
+  } catch (err) {
     logger.error(`Erro ao criar comunidade: ${error.message}`)
 
     // Verifica se é um erro de validação do Sequelize
-    if (error.name === "SequelizeValidationError") {
-      return res.status(400).json({
-        error: "Erro de validação",
-        details: error.errors.map((e) => e.message),
-      })
+    if (err.name === "SequelizeValidationError") {
+      // ↓ ALTERADO
+      return error(res, "Erro de validação", 400, err.errors.map(e => e.message));
     }
 
-    res.status(500).json({ error: "Erro ao criar comunidade" })
+    // ↓ ALTERADO
+    return error(res, "Erro ao criar comunidade", 500, err.message);
   }
-}
+};
 
 /**
  * Atualiza uma comunidade existente
@@ -96,10 +100,10 @@ const updateComunidade = async (req, res) => {
     const { id } = req.params
     const { nome, localizacao, descricao, dataFundacao, metaSustentabilidade } = req.body
 
-    const comunidade = await Comunidade.findByPk(id)
-
+    const comunidade = await Comunidade.findByPk(id);
     if (!comunidade) {
-      return res.status(404).json({ error: "Comunidade não encontrada" })
+      // ↓ ALTERADO
+      return error(res, "Comunidade não encontrada", 404);
     }
 
     // Atualiza os campos
@@ -111,21 +115,20 @@ const updateComunidade = async (req, res) => {
       metaSustentabilidade: metaSustentabilidade !== undefined ? metaSustentabilidade : comunidade.metaSustentabilidade,
     })
 
-    res.status(200).json(comunidade)
-  } catch (error) {
-    logger.error(`Erro ao atualizar comunidade ${req.params.id}: ${error.message}`)
+    // ↓ ALTERADO
+    return success(res, comunidade, "Comunidade atualizada com sucesso");
+  } catch (err) {
+    logger.error(`Erro ao atualizar comunidade ${req.params.id}: ${err.message}`);
 
-    // Verifica se é um erro de validação do Sequelize
-    if (error.name === "SequelizeValidationError") {
-      return res.status(400).json({
-        error: "Erro de validação",
-        details: error.errors.map((e) => e.message),
-      })
+    if (err.name === "SequelizeValidationError") {
+      // ↓ ALTERADO
+      return error(res, "Erro de validação", 400, err.errors.map(e => e.message));
     }
 
-    res.status(500).json({ error: "Erro ao atualizar comunidade" })
+    // ↓ ALTERADO
+    return error(res, "Erro ao atualizar comunidade", 500, err.message);
   }
-}
+};
 
 /**
  * Remove uma comunidade
@@ -134,22 +137,24 @@ const updateComunidade = async (req, res) => {
  */
 const deleteComunidade = async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
 
-    const comunidade = await Comunidade.findByPk(id)
-
+    const comunidade = await Comunidade.findByPk(id);
     if (!comunidade) {
-      return res.status(404).json({ error: "Comunidade não encontrada" })
+      // ↓ ALTERADO
+      return error(res, "Comunidade não encontrada", 404);
     }
 
-    await comunidade.destroy()
+    await comunidade.destroy();
 
-    res.status(200).json({ message: "Comunidade removida com sucesso" })
-  } catch (error) {
-    logger.error(`Erro ao remover comunidade ${req.params.id}: ${error.message}`)
-    res.status(500).json({ error: "Erro ao remover comunidade" })
+    // ↓ ALTERADO
+    return success(res, null, "Comunidade removida com sucesso");
+  } catch (err) {
+    logger.error(`Erro ao remover comunidade ${req.params.id}: ${err.message}`);
+    // ↓ ALTERADO
+    return error(res, "Erro ao remover comunidade", 500, err.message);
   }
-}
+};
 
 module.exports = {
   getAllComunidades,

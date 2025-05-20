@@ -5,6 +5,8 @@
 
 const { Iniciativa, Comunidade, Morador } = require("../models")
 const logger = require("../utils/logger")
+// ↓ ALTERADO: Importando o responseHandler para padronização das respostas
+const { success, error } = require("../utils/responseHandler")
 
 /**
  * Obtém todas as iniciativas
@@ -19,10 +21,12 @@ const getAllIniciativas = async (req, res) => {
         { model: Morador, as: "responsavel" },
       ],
     })
-    res.status(200).json(iniciativas)
+    // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de sucesso
+    return success(res, iniciativas, "Iniciativas recuperadas com sucesso")
   } catch (error) {
     logger.error(`Erro ao buscar iniciativas: ${error.message}`)
-    res.status(500).json({ error: "Erro ao buscar iniciativas" })
+    // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+    return error(res, "Erro ao buscar iniciativas", 500)
   }
 }
 
@@ -43,13 +47,16 @@ const getIniciativaById = async (req, res) => {
     })
 
     if (!iniciativa) {
-      return res.status(404).json({ error: "Iniciativa não encontrada" })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(res, "Iniciativa não encontrada", 404)
     }
 
-    res.status(200).json(iniciativa)
-  } catch (error) {
-    logger.error(`Erro ao buscar iniciativa ${req.params.id}: ${error.message}`)
-    res.status(500).json({ error: "Erro ao buscar iniciativa" })
+    // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de sucesso
+    return success(res, iniciativa, "Iniciativa recuperada com sucesso")
+  } catch (err) {
+    logger.error(`Erro ao buscar iniciativa ${req.params.id}: ${err.message}`)
+    // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+    return error(res, "Erro ao buscar iniciativa", 500)
   }
 }
 
@@ -64,44 +71,58 @@ const createIniciativa = async (req, res) => {
 
     // Validação básica
     if (!titulo || !categoria || !comunidadeId || !responsavelId) {
-      return res.status(400).json({
-        error: "Título, categoria, comunidadeId e responsavelId são obrigatórios",
-      })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(
+        res, 
+        "Título, categoria, comunidadeId e responsavelId são obrigatórios", 
+        400
+      )
     }
 
     // Verifica se a categoria é válida
     if (!Object.values(Iniciativa.CATEGORIAS).includes(categoria)) {
-      return res.status(400).json({
-        error: "Categoria inválida",
-        validCategories: Object.values(Iniciativa.CATEGORIAS),
-      })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(
+        res, 
+        "Categoria inválida", 
+        400, 
+        { validCategories: Object.values(Iniciativa.CATEGORIAS) }
+      )
     }
 
     // Verifica se o status é válido
     if (status && !Object.values(Iniciativa.STATUS).includes(status)) {
-      return res.status(400).json({
-        error: "Status inválido",
-        validStatus: Object.values(Iniciativa.STATUS),
-      })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(
+        res, 
+        "Status inválido", 
+        400, 
+        { validStatus: Object.values(Iniciativa.STATUS) }
+      )
     }
 
     // Verifica se a comunidade existe
     const comunidade = await Comunidade.findByPk(comunidadeId)
     if (!comunidade) {
-      return res.status(404).json({ error: "Comunidade não encontrada" })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(res, "Comunidade não encontrada", 404)
     }
 
     // Verifica se o responsável existe
     const responsavel = await Morador.findByPk(responsavelId)
     if (!responsavel) {
-      return res.status(404).json({ error: "Responsável não encontrado" })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(res, "Responsável não encontrado", 404)
     }
 
     // Verifica se o responsável pertence à comunidade
     if (responsavel.comunidadeId !== comunidadeId) {
-      return res.status(400).json({
-        error: "O responsável deve pertencer à comunidade da iniciativa",
-      })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(
+        res, 
+        "O responsável deve pertencer à comunidade da iniciativa", 
+        400
+      )
     }
 
     const novaIniciativa = await Iniciativa.create({
@@ -115,19 +136,24 @@ const createIniciativa = async (req, res) => {
       responsavelId,
     })
 
-    res.status(201).json(novaIniciativa)
-  } catch (error) {
-    logger.error(`Erro ao criar iniciativa: ${error.message}`)
+    // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de sucesso
+    return success(res, novaIniciativa, "Iniciativa criada com sucesso", 201)
+  } catch (err) {
+    logger.error(`Erro ao criar iniciativa: ${err.message}`)
 
     // Verifica se é um erro de validação do Sequelize
-    if (error.name === "SequelizeValidationError") {
-      return res.status(400).json({
-        error: "Erro de validação",
-        details: error.errors.map((e) => e.message),
-      })
+    if (err.name === "SequelizeValidationError") {
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(
+        res, 
+        "Erro de validação", 
+        400, 
+        { details: err.errors.map((e) => e.message) }
+      )
     }
 
-    res.status(500).json({ error: "Erro ao criar iniciativa" })
+    // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+    return error(res, "Erro ao criar iniciativa", 500)
   }
 }
 
@@ -144,44 +170,56 @@ const updateIniciativa = async (req, res) => {
     const iniciativa = await Iniciativa.findByPk(id)
 
     if (!iniciativa) {
-      return res.status(404).json({ error: "Iniciativa não encontrada" })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(res, "Iniciativa não encontrada", 404)
     }
 
     // Validações para categoria e status
     if (categoria && !Object.values(Iniciativa.CATEGORIAS).includes(categoria)) {
-      return res.status(400).json({
-        error: "Categoria inválida",
-        validCategories: Object.values(Iniciativa.CATEGORIAS),
-      })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(
+        res, 
+        "Categoria inválida", 
+        400, 
+        { validCategories: Object.values(Iniciativa.CATEGORIAS) }
+      )
     }
 
     if (status && !Object.values(Iniciativa.STATUS).includes(status)) {
-      return res.status(400).json({
-        error: "Status inválido",
-        validStatus: Object.values(Iniciativa.STATUS),
-      })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(
+        res, 
+        "Status inválido", 
+        400, 
+        { validStatus: Object.values(Iniciativa.STATUS) }
+      )
     }
 
     // Validações para referências externas
     if (comunidadeId) {
       const comunidade = await Comunidade.findByPk(comunidadeId)
       if (!comunidade) {
-        return res.status(404).json({ error: "Comunidade não encontrada" })
+        // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+        return error(res, "Comunidade não encontrada", 404)
       }
     }
 
     if (responsavelId) {
       const responsavel = await Morador.findByPk(responsavelId)
       if (!responsavel) {
-        return res.status(404).json({ error: "Responsável não encontrado" })
+        // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+        return error(res, "Responsável não encontrado", 404)
       }
 
       // Verifica se o responsável pertence à comunidade
       const comunidadeIdFinal = comunidadeId || iniciativa.comunidadeId
       if (responsavel.comunidadeId !== comunidadeIdFinal) {
-        return res.status(400).json({
-          error: "O responsável deve pertencer à comunidade da iniciativa",
-        })
+        // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+        return error(
+          res, 
+          "O responsável deve pertencer à comunidade da iniciativa", 
+          400
+        )
       }
     }
 
@@ -197,19 +235,24 @@ const updateIniciativa = async (req, res) => {
       responsavelId: responsavelId || iniciativa.responsavelId,
     })
 
-    res.status(200).json(iniciativa)
-  } catch (error) {
-    logger.error(`Erro ao atualizar iniciativa ${req.params.id}: ${error.message}`)
+    // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de sucesso
+    return success(res, iniciativa, "Iniciativa atualizada com sucesso")
+  } catch (err) {
+    logger.error(`Erro ao atualizar iniciativa ${req.params.id}: ${err.message}`)
 
     // Verifica se é um erro de validação do Sequelize
-    if (error.name === "SequelizeValidationError") {
-      return res.status(400).json({
-        error: "Erro de validação",
-        details: error.errors.map((e) => e.message),
-      })
+    if (err.name === "SequelizeValidationError") {
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(
+        res, 
+        "Erro de validação", 
+        400, 
+        { details: err.errors.map((e) => e.message) }
+      )
     }
 
-    res.status(500).json({ error: "Erro ao atualizar iniciativa" })
+    // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+    return error(res, "Erro ao atualizar iniciativa", 500)
   }
 }
 
@@ -225,15 +268,18 @@ const deleteIniciativa = async (req, res) => {
     const iniciativa = await Iniciativa.findByPk(id)
 
     if (!iniciativa) {
-      return res.status(404).json({ error: "Iniciativa não encontrada" })
+      // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+      return error(res, "Iniciativa não encontrada", 404)
     }
 
     await iniciativa.destroy()
 
-    res.status(200).json({ message: "Iniciativa removida com sucesso" })
-  } catch (error) {
-    logger.error(`Erro ao remover iniciativa ${req.params.id}: ${error.message}`)
-    res.status(500).json({ error: "Erro ao remover iniciativa" })
+    // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de sucesso
+    return success(res, null, "Iniciativa removida com sucesso")
+  } catch (err) {
+    logger.error(`Erro ao remover iniciativa ${req.params.id}: ${err.message}`)
+    // ↓ ALTERADO: Utilizando responseHandler para padronizar resposta de erro
+    return error(res, "Erro ao remover iniciativa", 500)
   }
 }
 
