@@ -38,40 +38,39 @@ describe('Validações do Modelo de Comunidade', () => {
   });
 });
 
-describe('API de Comunidades', () => {
-  it('deve listar comunidades', async () => {
-    // Cria uma comunidade para o teste
+describe('Testes da API /api/comunidades', () => {
+  it('Deve retornar a lista de comunidades', async () => {
     await Comunidade.create({
       nome: 'Comunidade API',
       localizacao: 'Rio de Janeiro, RJ',
-      descricao: 'Comunidade para teste de API',
+      descricao: 'Comunidade para teste da API',
       dataFundacao: '2023-01-01',
       metaSustentabilidade: 'Reduzir emissões em 30%'
     });
 
     const response = await request(app).get('/api/comunidades');
-    
+
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBeGreaterThan(0);
     expect(response.body[0].nome).toBe('Comunidade API');
   });
 
-  it('deve criar uma comunidade via API', async () => {
-    const novaComunidade = {
+  it('Deve criar uma nova comunidade via API', async () => {
+    const dadosComunidade = {
       nome: 'Comunidade Nova',
       localizacao: 'Belo Horizonte, MG',
-      descricao: 'Nova comunidade via API',
+      descricao: 'Nova comunidade criada via API',
       dataFundacao: '2023-02-01',
       metaSustentabilidade: 'Energia 100% renovável'
     };
 
     const response = await request(app)
       .post('/api/comunidades')
-      .send(novaComunidade);
-    
+      .send(dadosComunidade);
+
     expect(response.status).toBe(201);
-    expect(response.body.nome).toBe(novaComunidade.nome);
+    expect(response.body.nome).toBe(dadosComunidade.nome);
     expect(response.body.id).toBeDefined();
   });
 });
