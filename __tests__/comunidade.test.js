@@ -1,46 +1,40 @@
 /**
- * Testes para o modelo e controlador de Comunidade
+ * Testes unitários e de integração para o modelo e API de Comunidade
  */
 
 const request = require('supertest');
 const app = require('../server');
 const { Comunidade, sequelize } = require('../src/models');
 
-// Limpa o banco de dados antes de cada teste
+// Limpa e sincroniza o banco antes de cada teste
 beforeEach(async () => {
   await sequelize.sync({ force: true });
 });
 
-// Fecha a conexão com o banco de dados após todos os testes
+// Encerra a conexão com o banco após todos os testes
 afterAll(async () => {
   await sequelize.close();
 });
 
-describe('Modelo de Comunidade', () => {
-  it('deve criar uma comunidade com sucesso', async () => {
-    const comunidade = await Comunidade.create({
+describe('Validações do Modelo de Comunidade', () => {
+  it('Deve criar uma comunidade com dados válidos', async () => {
+    const novaComunidade = await Comunidade.create({
       nome: 'Comunidade Teste',
       localizacao: 'São Paulo, SP',
-      descricao: 'Comunidade para testes',
+      descricao: 'Comunidade criada para testes unitários',
       dataFundacao: '2023-01-01',
       metaSustentabilidade: 'Reduzir emissões em 30%'
     });
 
-    expect(comunidade.id).toBeDefined();
-    expect(comunidade.nome).toBe('Comunidade Teste');
-    expect(comunidade.localizacao).toBe('São Paulo, SP');
+    expect(novaComunidade.id).toBeDefined();
+    expect(novaComunidade.nome).toBe('Comunidade Teste');
+    expect(novaComunidade.localizacao).toBe('São Paulo, SP');
   });
 
-  it('não deve criar uma comunidade sem nome', async () => {
-    try {
-      await Comunidade.create({
-        localizacao: 'São Paulo, SP'
-      });
-      // Se chegar aqui, o teste falhou
-      expect(true).toBe(false);
-    } catch (error) {
-      expect(error).toBeDefined();
-    }
+  it('Não deve permitir criação de comunidade sem nome', async () => {
+    await expect(Comunidade.create({
+      localizacao: 'São Paulo, SP'
+    })).rejects.toThrow();
   });
 });
 
