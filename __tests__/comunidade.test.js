@@ -36,6 +36,16 @@ describe('Validações do Modelo de Comunidade', () => {
       localizacao: 'São Paulo, SP'
     })).rejects.toThrow();
   });
+
+  // Nova validação: sem localização não deve criar
+  it('Não deve permitir criação de comunidade sem localização', async () => {
+    await expect(Comunidade.create({
+      nome: 'Comunidade Sem Localização',
+      descricao: 'Teste sem localização',
+      dataFundacao: '2023-01-01',
+      metaSustentabilidade: 'Meta de teste'
+    })).rejects.toThrow();
+  });
 });
 
 describe('Testes da API /api/comunidades', () => {
@@ -72,5 +82,49 @@ describe('Testes da API /api/comunidades', () => {
     expect(response.status).toBe(201);
     expect(response.body.nome).toBe(dadosComunidade.nome);
     expect(response.body.id).toBeDefined();
+  });
+
+  // Teste de atualização via API
+  it('Deve atualizar uma comunidade existente', async () => {
+    const comunidade = await Comunidade.create({
+      nome: 'Comunidade Atualizável',
+      localizacao: 'São Paulo, SP',
+      descricao: 'Comunidade para teste de atualização',
+      dataFundacao: '2023-01-01',
+      metaSustentabilidade: 'Meta de teste'
+    });
+
+    const response = await request(app)
+      .put(`/api/comunidades/${comunidade.id}`)
+      .send({ nome: 'Comunidade Atualizada' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.nome).toBe('Comunidade Atualizada');
+  });
+
+  // Teste de exclusão via API
+  it('Deve excluir uma comunidade existente', async () => {
+    const comunidade = await Comunidade.create({
+      nome: 'Comunidade Para Excluir',
+      localizacao: 'São Paulo, SP',
+      descricao: 'Comunidade para teste de exclusão',
+      dataFundacao: '2023-01-01',
+      metaSustentabilidade: 'Meta de teste'
+    });
+
+    const response = await request(app)
+      .delete(`/api/comunidades/${comunidade.id}`);
+
+    expect(response.status).toBe(204);
+
+    // Confirmar que a comunidade foi excluída
+    const comunidadeDeletada = await Comunidade.findByPk(comunidade.id);
+    expect(comunidadeDeletada).toBeNull();
+  });
+
+  // Teste de acesso a recurso inexistente - deve devolver 404
+  it('Deve retornar 404 ao tentar acessar uma comunidade inexistente', async () => {
+    const response = await request(app).get('/api/comunidades/9999');
+    expect(response.status).toBe(404);
   });
 });
